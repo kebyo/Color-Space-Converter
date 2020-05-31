@@ -120,7 +120,7 @@ void CImage::write1file(SInput console) {
     if (!new_f) {
         throw CException("Output file didn't open", new_f);
     }
-    fprintf(new_f, "P%i\n%i %i\n%i\n", 5, data[0].width, data[0].height, data[0].max_val);
+    fprintf(new_f, "P%i\n%i %i\n%i\n", 6, data[0].width, data[0].height, data[0].max_val);
     unsigned char *buffer = new unsigned char[data[0].size * 3];
     for (int i = 0; i < data[0].size * 3; i += 3) {
         buffer[i] = (unsigned char) pixRGB[i].red;
@@ -130,6 +130,59 @@ void CImage::write1file(SInput console) {
     fwrite(buffer, sizeof(unsigned char), data[0].size * 3, new_f);
     delete[] buffer;
     fclose(new_f);
+}
+
+void CImage::write3files(SInput console) {
+    FILE *f1, *f2, *f3;
+    string filename1 = console.inputFile;
+    string filename2 = filename1;
+    string filename3 = filename1;
+    filename1.insert(filename1.size() - 4, "_1");
+    filename2.insert(filename2.size() - 4, "_2");
+    filename3.insert(filename3.size() - 4, "_3");
+    int n = filename1.size();
+    char name1[n];
+    for (int i = 0; i < filename1.size(); i++) {
+        name1[i] = filename1[i];
+    }
+    char name2[n];
+    for (int i = 0; i < n; i++) {
+        name2[i] = filename2[i];
+    }
+    char name3[n];
+    for (int i = 0; i < n; i++) {
+        name3[i] = filename3[i];
+    }
+    f1 = fopen(name1, "rb");
+    if (!f1) {
+        throw CException("Output file _1 didn't open");
+    }
+    f2 = fopen(name2, "rb");
+    if (!f2) {
+        throw CException("Output file _2 didn't open");
+    }
+    f3 = fopen(name3, "rb");
+    if (!f3) {
+        throw CException("Output file _3 didn't open");
+    }
+    fprintf(f1, "P%i\n%i %i\n%i\n", 5, data[0].width, data[0].height, data[0].max_val);
+    unsigned char *buffer1 = new unsigned char[data[0].size];
+    unsigned char *buffer2 = new unsigned char[data[0].size];
+    unsigned char *buffer3 = new unsigned char[data[0].size];
+    for (int i = 0; i < data[0].size; i++) {
+        buffer1[i] = (unsigned char) pixRGB[i].red;
+        buffer2[i] = (unsigned char) pixRGB[i].green;
+        buffer3[i] = (unsigned char) pixRGB[i].blue;
+    }
+    fwrite(buffer1, sizeof(unsigned char), data[0].size, f1);
+    fwrite(buffer2, sizeof(unsigned char), data[0].size, f2);
+    fwrite(buffer3, sizeof(unsigned char), data[0].size, f3);
+    delete[] buffer1;
+    delete[] buffer2;
+    delete[] buffer3;
+    fclose(f1);
+    fclose(f2);
+    fclose(f3);
 }
 
 CImage::~CImage() {
