@@ -260,7 +260,7 @@ void CImage::RGBtoHSL() {
         double Cmin = min(r, min(g, b));
         double d = Cmax - Cmin;
         double l = (Cmax + Cmin) / 2.0;
-        double h;
+        double h = 0;
         if (d == 0) {
             h = 0;
         } else {
@@ -277,7 +277,7 @@ void CImage::RGBtoHSL() {
                 h = 60.0 * (r - g) / d + 240;
             }
         }
-        double s;
+        double s = 0;
         if (l == 0 || Cmax == Cmin) {
             s = 0;
         } else if (l > 0 && l <= 0.5) {
@@ -299,7 +299,7 @@ void CImage::HSLtoRGB() {
         double c = (1 - abs(2 * l - 1)) * s;
         double x = c * (1 - abs(fmod(h / 60.0, 2) - 1));
         double m = l - c / 2.0;
-        double r, g, b;
+        double r = 0, g = 0, b = 0;
         if (h >= 0 && h < 60) {
             r = c + m;
             g = x + m;
@@ -344,7 +344,7 @@ void CImage::RGBtoHSV() {
         double MAX = max(r, max(g, b));
         double MIN = min(r, min(g, b));
         double d = MAX - MIN;
-        double h, s, v;
+        double h = 0, s = 0, v = 0;
         if (d == 0) {
             h = 0;
         } else {
@@ -381,7 +381,7 @@ void CImage::HSVtoRGB() {
         double c = v * s;
         double x = c * (1 - abs(fmod(h / 60.0, 2) - 1));
         double m = v - c;
-        double r, g, b;
+        double r = 0, g = 0, b = 0;
         if (h >= 0 && h < 60) {
             r = c + m;
             g = x + m;
