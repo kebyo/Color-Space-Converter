@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
         } else {
             img.read3files(input);
         }
-        img.convert(input);
+//        img.convert(input);
         if (input.countOutput == 1) {
             img.write1file(input);
         } else {

@@ -18,9 +18,9 @@ void CImage::read1file(SInput console) {
     unsigned char *buffer;
     buffer = new unsigned char[data[0].size * 3];
     pixRGB = new RGB[data[0].size];
-    fread(buffer, sizeof(unsigned char) * 3, data[0].size, f);
-    for (int i = 0; i < data[0].size; i += 3) {
-        pixRGB[i] = {(double) buffer[i], (double) buffer[i + 1], (double) buffer[i + 3]};
+    fread(buffer, sizeof(unsigned char), data[0].size * 3, f);
+    for (int i = 0, j = 0; i < data[0].size * 3; i += 3, j++) {
+        pixRGB[j] = {(double) buffer[i], (double) buffer[i + 1], (double) buffer[i + 2]};
     }
     delete[] buffer;
     fclose(f);
@@ -121,13 +121,14 @@ void CImage::write1file(SInput console) {
         throw CException("Output file didn't open", new_f);
     }
     fprintf(new_f, "P%i\n%i %i\n%i\n", 6, data[0].width, data[0].height, data[0].max_val);
-    unsigned char *buffer = new unsigned char[data[0].size * 3];
-    for (int i = 0; i < data[0].size * 3; i += 3) {
-        buffer[i] = (unsigned char) pixRGB[i].red;
-        buffer[i + 1] = (unsigned char) pixRGB[i].green;
-        buffer[i + 2] = (unsigned char) pixRGB[i].blue;
+    int len = data[0].size * 3;
+    unsigned char *buffer = new unsigned char[len];
+    for (int i = 0, j = 0; i < len; i += 3, j++) {
+        buffer[i] = (unsigned char) pixRGB[j].red;
+        buffer[i + 1] = (unsigned char) pixRGB[j].green;
+        buffer[i + 2] = (unsigned char) pixRGB[j].blue;
     }
-    fwrite(buffer, sizeof(unsigned char), data[0].size * 3, new_f);
+    fwrite(buffer, sizeof(unsigned char), len, new_f);
     delete[] buffer;
     fclose(new_f);
 }

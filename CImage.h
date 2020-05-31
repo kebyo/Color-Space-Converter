@@ -38,6 +38,7 @@ struct SMetaData {
 
 class CImage {
 public:
+
     void read1file(SInput console);
 
     void read3files(SInput console);
