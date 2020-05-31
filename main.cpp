@@ -128,6 +128,13 @@ int main(int argc, char *argv[]) {
         } else {
             img.read3files(input);
         }
+        img.convert(input);
+        if (input.countOutput == 1) {
+            img.write1file(input);
+        } else {
+            img.write3files(input);
+        }
+        return 0;
     } catch (CException &exception) {
         cerr << exception.getError();
         if (exception.getFile()) {
@@ -141,5 +148,4 @@ int main(int argc, char *argv[]) {
         }
         exit(1);
     }
-    return 0;
 }
