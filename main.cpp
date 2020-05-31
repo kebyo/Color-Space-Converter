@@ -122,11 +122,22 @@ int main(int argc, char *argv[]) {
                 continue;
             }
         }
-
+        CImage img;
+        if (input.countInput == 1) {
+            img.read1file(input);
+        } else {
+            img.read3files(input);
+        }
     } catch (CException &exception) {
         cerr << exception.getError();
         if (exception.getFile()) {
             fclose(exception.getFile());
+        }
+        if (exception.getFile2()) {
+            fclose(exception.getFile2());
+        }
+        if (exception.getFile3()) {
+            fclose(exception.getFile3());
         }
         exit(1);
     }

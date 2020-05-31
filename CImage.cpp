@@ -5,32 +5,112 @@ void CImage::read1file(SInput console) {
     if (!f) {
         throw CException("Input file didn't open\n");
     }
-    file = f;
-    if (fscanf(f, "P%i%i%i%i\n", &this->version, &this->width, &this->height, &max_val) != 4) {
+    data->file = f;
+    if (fscanf(f, "P%i%i%i%i\n", &this->data->version, &this->data->width, &this->data->height, &data->max_val) != 4) {
         throw CException("Wrong amount data in file", f);
     }
-    if (version != 6) {
+    if (data->version != 6) {
         throw CException("Expected version 6");
     }
-    size = width * height;
+    data->size = data->width * data->height;
     unsigned char *buffer;
-    buffer = new unsigned char[size * 3];
-    pixRGB = new RGB[size];
-    fread(buffer, sizeof(unsigned char) * 3, size, f);
-    for (int i = 0; i < size; i += 3) {
+    buffer = new unsigned char[data->size * 3];
+    pixRGB = new RGB[data->size];
+    fread(buffer, sizeof(unsigned char) * 3, data->size, f);
+    for (int i = 0; i < data->size; i += 3) {
         pixRGB[i] = {(double) buffer[i], (double) buffer[i + 1], (double) buffer[i + 3]};
     }
     delete[] buffer;
     fclose(f);
-    return;
 }
 
 void CImage::read3files(SInput console) {
-
+    FILE *f1, *f2, *f3;
+    string filename1 = console.inputFile;
+    string filename2 = filename1;
+    string filename3 = filename1;
+    filename1.insert(filename1.size() - 4, "_1");
+    filename2.insert(filename2.size() - 4, "_2");
+    filename3.insert(filename3.size() - 4, "_3");
+    int n = filename1.size();
+    char name1[n];
+    for (int i = 0; i < filename1.size(); i++) {
+        name1[i] = filename1[i];
+    }
+    char name2[n];
+    for (int i = 0; i < n; i++) {
+        name2[i] = filename2[i];
+    }
+    char name3[n];
+    for (int i = 0; i < n; i++) {
+        name3[i] = filename3[i];
+    }
+    f1 = fopen(name1, "rb");
+    if (!f1) {
+        throw CException("File _1 didn't open");
+    }
+    f2 = fopen(name2, "rb");
+    if (!f2) {
+        throw CException("File _2 didn't open");
+    }
+    f3 = fopen(name3, "rb");
+    if (!f3) {
+        throw CException("File _3 didn't open");
+    }
+    data = new SMetaData[3];
+    if (fscanf(f1, "P%i%i%i%i\n", &this->data[0].version, &this->data[0].width, &this->data[0].height,
+               &data[0].max_val) != 4) {
+        throw CException("Wrong amount meta data in _1");
+    }
+    if (fscanf(f2, "P%i%i%i%i\n", &this->data[1].version, &this->data[1].width, &this->data[1].height,
+               &data[1].max_val) != 4) {
+        throw CException("Wrong amount meta data in _2");
+    }
+    if (fscanf(f3, "P%i%i%i%i\n", &this->data[2].version, &this->data[2].width, &this->data[2].height,
+               &data[2].max_val) != 4) {
+        throw CException("Wrong amount meta data in _3");
+    }
+    if (data[0].version != 5) {
+        throw CException("Expected version 5 in _1", f1, f2, f3);
+    }
+    if (data[1].version != 5) {
+        throw CException("Expected version 5 in _2", f1, f2, f3);
+    }
+    if (data[2].version != 5) {
+        throw CException("Expected version 5 in _3", f1, f2, f3);
+    }
+    int width = data[0].width;
+    if (data[1].width != width || data[2].width != width) {
+        throw CException("Different widths", f1, f2, f3);
+    }
+    int height = data[0].height;
+    if (data[1].height != height || data[2].height != height) {
+        throw CException("Different heights", f1, f2, f3);
+    }
+    int mv = data[0].max_val;
+    if (data[1].version != mv || data[2].version != mv) {
+        throw CException("Different max values", f1, f2, f3);
+    }
+    int len = data[0].size;
+    unsigned char *buffer1 = new unsigned char[len];
+    fread(buffer1, sizeof(unsigned char), len, f1);
+    unsigned char *buffer2 = new unsigned char[len];
+    fread(buffer2, sizeof(unsigned char), len, f1);
+    unsigned char *buffer3 = new unsigned char[len];
+    fread(buffer3, sizeof(unsigned char), len, f1);
+    pixRGB = new RGB[len];
+    for (int i = 0; i < len; i++) {
+        pixRGB[i] = {(double) buffer1[i], (double) buffer2[i], (double) buffer3[i]};
+    }
+    delete[] buffer1;
+    delete[] buffer2;
+    delete[] buffer3;
+    fclose(f1);
+    fclose(f2);
+    fclose(f3);
 }
 
 CImage::~CImage() {
-    delete[] pix;
     delete[] pixRGB;
 }
 
@@ -80,68 +160,56 @@ void CImage::convert(SInput config) {
 }
 
 void CImage::RGBtoCMY() {
-    for (int i = 0; i < size; i++) {
-        if (version == 5) {
-            pix[i] = (1 - pix[i] / 255.0) * 255.0;
-        } else {
-            pixRGB[i].red = (1 - pixRGB[i].red / 255.0) * 255.0;
-            pixRGB[i].green = (1 - pixRGB[i].green / 255.0) * 255.0;
-            pixRGB[i].blue = (1 - pixRGB[i].blue / 255.0) * 255.0;
-        }
+    for (int i = 0; i < data->size; i++) {
+        pixRGB[i].red = (1 - pixRGB[i].red / 255.0) * 255.0;
+        pixRGB[i].green = (1 - pixRGB[i].green / 255.0) * 255.0;
+        pixRGB[i].blue = (1 - pixRGB[i].blue / 255.0) * 255.0;
     }
 }
 
 void CImage::CMYtoRGB() {
-    for (int i = 0; i < size; i++) {
-        if (version == 5) {
-            pix[i] = (1 - pix[i] / 255.0) * 255.0;
-        } else {
-            pixRGB[i].red = (1 - pixRGB[i].red / 255.0) * 255.0;
-            pixRGB[i].green = (1 - pixRGB[i].green / 255.0) * 255.0;
-            pixRGB[i].blue = (1 - pixRGB[i].blue / 255.0) * 255.0;
-        }
+    for (int i = 0; i < data->size; i++) {
+        pixRGB[i].red = (1 - pixRGB[i].red / 255.0) * 255.0;
+        pixRGB[i].green = (1 - pixRGB[i].green / 255.0) * 255.0;
+        pixRGB[i].blue = (1 - pixRGB[i].blue / 255.0) * 255.0;
     }
 }
 
 void CImage::RGBtoHSL() {
-    for (int i = 0; i < size; i++) {
-        if (version == 5) {
-
+    for (int i = 0; i < data->size; i++) {
+        double r = pixRGB[i].red / 255.0;
+        double g = pixRGB[i].green / 255.0;
+        double b = pixRGB[i].blue / 255.0;
+        double Cmax = max(r, max(g, b));
+        double Cmin = min(r, min(g, b));
+        double d = Cmax - Cmin;
+        double l = (Cmax + Cmin) / 2.0;
+        double h;
+        if (d == 0) {
+            h = 0;
         } else {
-            double r = pixRGB[i].red / 255.0;
-            double g = pixRGB[i].green / 255.0;
-            double b = pixRGB[i].blue / 255.0;
-            double Cmax = max(r, max(g, b));
-            double Cmin = min(r, min(g, b));
-            double d = Cmax - Cmin;
-            double l = (Cmax + Cmin) / 2.0;
-            double h;
-            if (d == 0) {
-                h = 0;
-            } else {
-                if (Cmax == r && g >= b) {
-                    h = 60.0 * (g - b) / d;
-                }
-                if (Cmax == r && g < b) {
-                    h = 60.0 * (g - b) / d + 360;
-                }
-                if (Cmax == g) {
-                    h = 60.0 * (b - r) / d + 120;
-                }
-                if (Cmax == b) {
-                    h = 60.0 * (r - g) / d + 240;
-                }
+            if (Cmax == r && g >= b) {
+                h = 60.0 * (g - b) / d;
             }
-            double s = (d) / (1.0 - abs(1 - (Cmax + Cmin)));
-            pixRGB[i].red = h * 255.0 / 360.0;
-            pixRGB[i].green = s * 255.0;
-            pixRGB[i].blue = l * 255, 0;
+            if (Cmax == r && g < b) {
+                h = 60.0 * (g - b) / d + 360;
+            }
+            if (Cmax == g) {
+                h = 60.0 * (b - r) / d + 120;
+            }
+            if (Cmax == b) {
+                h = 60.0 * (r - g) / d + 240;
+            }
         }
+        double s = (d) / (1.0 - abs(1 - (Cmax + Cmin)));
+        pixRGB[i].red = h * 255.0 / 360.0;
+        pixRGB[i].green = s * 255.0;
+        pixRGB[i].blue = l * 255, 0;
     }
 }
 
 void CImage::HSLtoRGB() {
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < data->size; i++) {
         double h = pixRGB[i].red / 255.0 * 360.0;
         double s = pixRGB[i].blue / 255.0;
         double l = pixRGB[i].green / 255.0;
@@ -186,7 +254,7 @@ void CImage::HSLtoRGB() {
 }
 
 void CImage::RGBtoHSV() {
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < data->size; i++) {
         double r = pixRGB[i].red / 255.0;
         double g = pixRGB[i].green / 255.0;
         double b = pixRGB[i].blue / 255.0;
@@ -223,7 +291,7 @@ void CImage::RGBtoHSV() {
 }
 
 void CImage::HSVtoRGB() {
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < data->size; i++) {
         double h = pixRGB[i].red / 255.0 * 360.0;
         double s = pixRGB[i].blue / 255.0;
         double v = pixRGB[i].green / 255.0;
@@ -269,7 +337,7 @@ void CImage::HSVtoRGB() {
 
 void CImage::RGBtoYCbCr601() {
     double kr = 0.299, kg = 0.587, kb = 0.114;
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < data->size; i++) {
         double r = pixRGB[i].red / 255.0;
         double g = pixRGB[i].green / 255.0;
         double b = pixRGB[i].blue / 255.0;
@@ -284,7 +352,7 @@ void CImage::RGBtoYCbCr601() {
 
 void CImage::RGBtoYCbCr709() {
     double kr = 0.0722, kg = 0.2126, kb = 0.7152;
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < data->size; i++) {
         double r = pixRGB[i].red / 255.0;
         double g = pixRGB[i].green / 255.0;
         double b = pixRGB[i].blue / 255.0;
@@ -299,7 +367,7 @@ void CImage::RGBtoYCbCr709() {
 
 void CImage::YCbCr601toRGB() {
     double kr = 0.299, kg = 0.587, kb = 0.114;
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < data->size; i++) {
         double y = pixRGB[i].red / 255.0;
         double pb = pixRGB[i].green / 255.0 - 0.5;
         double pr = pixRGB[i].blue / 255.0 - 0.5;
@@ -317,7 +385,7 @@ void CImage::YCbCr601toRGB() {
 
 void CImage::YCbCr709toRGB() {
     double kr = 0.0722, kg = 0.2126, kb = 0.7152;
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < data->size; i++) {
         double y = pixRGB[i].red / 255.0;
         double pb = pixRGB[i].green / 255.0 - 0.5;
         double pr = pixRGB[i].blue / 255.0 - 0.5;
@@ -334,7 +402,7 @@ void CImage::YCbCr709toRGB() {
 }
 
 void CImage::RGBtoYCoCg() {
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < data->size; i++) {
         double r = pixRGB[i].red / 255.0;
         double g = pixRGB[i].green / 255.0;
         double b = pixRGB[i].blue / 255.0;
@@ -349,7 +417,7 @@ void CImage::RGBtoYCoCg() {
 }
 
 void CImage::YCoCgtoRGB() {
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < data->size; i++) {
         double y = pixRGB[i].red / 255.0;
         double co = pixRGB[i].green / 255.0 - 0.5;
         double cg = pixRGB[i].blue / 255.0 - 0.5;

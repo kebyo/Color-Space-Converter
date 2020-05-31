@@ -20,3 +20,18 @@ FILE *CException::getFile() {
 string CException::getError() {
     return this->error;
 }
+
+CException::CException(string error, FILE *f1, FILE *f2, FILE *f3) {
+    this->error = error;
+    this->file = f1;
+    this->file2 = f2;
+    this->file3 = f3;
+}
+
+FILE *CException::getFile2() {
+    return this->file2;
+}
+
+FILE *CException::getFile3() {
+    return this->file3;
+}

@@ -5,7 +5,6 @@
 #ifndef COLORSPACECONVERSION_CIMAGE_H
 #define COLORSPACECONVERSION_CIMAGE_H
 
-typedef double d;
 
 #include <iostream>
 #include "CException.h"
@@ -28,6 +27,15 @@ struct RGB {
     double blue;
 };
 
+struct SMetaData {
+    FILE *file;
+    int version;
+    int width;
+    int height;
+    int max_val;
+    int size;
+};
+
 class CImage {
 public:
     void read1file(SInput console);
@@ -43,12 +51,7 @@ public:
     ~CImage();
 
 private:
-    FILE *file;
-    int version;
-    int width;
-    int height;
-    int max_val;
-    int size;
+    SMetaData *data;
     RGB *pixRGB;
 
 

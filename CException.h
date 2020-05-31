@@ -15,13 +15,21 @@ public:
 
     CException(string error, FILE *f);
 
+    CException(string error, FILE *f1, FILE *f2, FILE *f3);
+
     string getError();
 
     FILE *getFile();
 
+    FILE *getFile2();
+
+    FILE *getFile3();
+
 private:
     string error;
-    FILE *file;
+    FILE *file = nullptr;
+    FILE *file2 = nullptr;
+    FILE *file3 = nullptr;
 };
 
 
