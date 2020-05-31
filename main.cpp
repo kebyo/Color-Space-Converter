@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
                     i++;
                     continue;
                 }
-                if (tmp == "CYM") {
+                if (tmp == "CMY") {
                     input.from = 6;
                     i++;
                     continue;
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
                     i++;
                     continue;
                 }
-                if (tmp == "CYM") {
+                if (tmp == "CMY") {
                     input.to = 6;
                     i++;
                     continue;
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
         } else {
             img.read3files(input);
         }
-//        img.convert(input);
+        img.convert(input);
         if (input.countOutput == 1) {
             img.write1file(input);
         } else {
