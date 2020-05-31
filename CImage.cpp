@@ -440,8 +440,8 @@ void CImage::RGBtoYCbCr709() {
         double g = pixRGB[i].green / 255.0;
         double b = pixRGB[i].blue / 255.0;
         double y = kr * r + kg * g + kb * b;
-        double pb = (1 / 2) * (b - y) / (1 - kb);
-        double pr = (1 / 2) * (r - y) / (1 - kr);
+        double pb = 0.5 * (b - y) / (1.0 - kb);
+        double pr = 0.5 * (r - y) / (1.0 - kr);
         pixRGB[i].red = y * 255.0;
         pixRGB[i].green = (pb + 0.5) * 255.0;
         pixRGB[i].blue = (pr + 0.5) * 255.0;
