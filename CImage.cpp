@@ -513,9 +513,12 @@ void CImage::YCoCgtoRGB() {
         double r = y + co - cg;
         double g = y + cg;
         double b = y - co - cg;
-        r = r < 0 ? 0 : (r > 1 ? 1 : r);
-        g = g < 0 ? 0 : (g > 1 ? 1 : g);
-        b = b < 0 ? 0 : (b > 1 ? 1 : b);
+        r = r < 0 ? 0 : r;
+        r = r > 1 ? 1 : r;
+        b = b < 0 ? 0 : b;
+        b = b > 1 ? 1 : b;
+        g = g < 0 ? 0 : g;
+        g = g > 1 ? 1 : g;
         pixRGB[i].red = r * 255.0;
         pixRGB[i].green = g * 255.0;
         pixRGB[i].blue = b * 255.0;
