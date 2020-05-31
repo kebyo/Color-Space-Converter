@@ -277,7 +277,14 @@ void CImage::RGBtoHSL() {
                 h = 60.0 * (r - g) / d + 240;
             }
         }
-        double s = (d) / (1.0 - abs(1 - (Cmax + Cmin)));
+        double s;
+        if (l == 0 || Cmax == Cmin) {
+            s = 0;
+        } else if (l > 0 && l <= 0.5) {
+            s = d / (2 * l);
+        } else if (l < 1.0) {
+            s = d / (2.0 - 2.0 * l);
+        }
         pixRGB[i].red = h * 255.0 / 360.0;
         pixRGB[i].green = s * 255.0;
         pixRGB[i].blue = l * 255, 0;
