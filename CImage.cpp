@@ -5,19 +5,21 @@ void CImage::read1file(SInput console) {
     if (!f) {
         throw CException("Input file didn't open\n");
     }
-    data->file = f;
-    if (fscanf(f, "P%i%i%i%i\n", &this->data->version, &this->data->width, &this->data->height, &data->max_val) != 4) {
+    data = new SMetaData[1];
+    data[0].file = f;
+    if (fscanf(f, "P%i%i%i%i\n", &this->data[0].version, &this->data[0].width, &this->data[0].height,
+               &data[0].max_val) != 4) {
         throw CException("Wrong amount data in file", f);
     }
-    if (data->version != 6) {
+    if (data[0].version != 6) {
         throw CException("Expected version 6");
     }
-    data->size = data->width * data->height;
+    data[0].size = data[0].width * data[0].height;
     unsigned char *buffer;
-    buffer = new unsigned char[data->size * 3];
-    pixRGB = new RGB[data->size];
-    fread(buffer, sizeof(unsigned char) * 3, data->size, f);
-    for (int i = 0; i < data->size; i += 3) {
+    buffer = new unsigned char[data[0].size * 3];
+    pixRGB = new RGB[data[0].size];
+    fread(buffer, sizeof(unsigned char) * 3, data[0].size, f);
+    for (int i = 0; i < data[0].size; i += 3) {
         pixRGB[i] = {(double) buffer[i], (double) buffer[i + 1], (double) buffer[i + 3]};
     }
     delete[] buffer;
@@ -87,6 +89,9 @@ void CImage::read3files(SInput console) {
     if (data[1].height != height || data[2].height != height) {
         throw CException("Different heights", f1, f2, f3);
     }
+    data[0].size = width * height;
+    data[1].size = width * height;
+    data[2].size = width * height;
     int mv = data[0].max_val;
     if (data[1].version != mv || data[2].version != mv) {
         throw CException("Different max values", f1, f2, f3);
@@ -108,6 +113,23 @@ void CImage::read3files(SInput console) {
     fclose(f1);
     fclose(f2);
     fclose(f3);
+}
+
+void CImage::write1file(SInput console) {
+    FILE *new_f = fopen(console.outputFile, "wb");
+    if (!new_f) {
+        throw CException("Output file didn't open", new_f);
+    }
+    fprintf(new_f, "P%i\n%i %i\n%i\n", 5, data[0].width, data[0].height, data[0].max_val);
+    unsigned char *buffer = new unsigned char[data[0].size * 3];
+    for (int i = 0; i < data[0].size * 3; i += 3) {
+        buffer[i] = (unsigned char) pixRGB[i].red;
+        buffer[i + 1] = (unsigned char) pixRGB[i].green;
+        buffer[i + 2] = (unsigned char) pixRGB[i].blue;
+    }
+    fwrite(buffer, sizeof(unsigned char), data[0].size * 3, new_f);
+    delete[] buffer;
+    fclose(new_f);
 }
 
 CImage::~CImage() {
