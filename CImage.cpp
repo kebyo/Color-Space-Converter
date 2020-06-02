@@ -1,4 +1,5 @@
 #include "CImage.h"
+#include <string.h>
 
 void CImage::read1file(SInput console) {
     FILE *f = fopen(console.inputFile, "rb");
@@ -35,18 +36,12 @@ void CImage::read3files(SInput console) {
     filename2.insert(filename2.size() - 4, "_2");
     filename3.insert(filename3.size() - 4, "_3");
     int n = filename1.size();
-    char name1[n];
-    for (int i = 0; i < filename1.size(); i++) {
-        name1[i] = filename1[i];
-    }
-    char name2[n];
-    for (int i = 0; i < n; i++) {
-        name2[i] = filename2[i];
-    }
-    char name3[n];
-    for (int i = 0; i < n; i++) {
-        name3[i] = filename3[i];
-    }
+    char *name1 = new char[filename1.size() + 1];
+    char *name2 = new char[filename2.size() + 1];
+    char *name3 = new char[filename3.size() + 1];
+    strcpy(name1, filename1.c_str());
+    strcpy(name2, filename2.c_str());
+    strcpy(name3, filename3.c_str());
     f1 = fopen(name1, "rb");
     if (!f1) {
         throw CException("File _1 didn't open");
@@ -62,15 +57,15 @@ void CImage::read3files(SInput console) {
     data = new SMetaData[3];
     if (fscanf(f1, "P%i%i%i%i\n", &this->data[0].version, &this->data[0].width, &this->data[0].height,
                &data[0].max_val) != 4) {
-        throw CException("Wrong amount meta data in _1");
+        throw CException("Wrong amount of meta data in _1");
     }
     if (fscanf(f2, "P%i%i%i%i\n", &this->data[1].version, &this->data[1].width, &this->data[1].height,
                &data[1].max_val) != 4) {
-        throw CException("Wrong amount meta data in _2");
+        throw CException("Wrong amount of meta data in _2");
     }
     if (fscanf(f3, "P%i%i%i%i\n", &this->data[2].version, &this->data[2].width, &this->data[2].height,
                &data[2].max_val) != 4) {
-        throw CException("Wrong amount meta data in _3");
+        throw CException("Wrong amount of meta data in _3");
     }
     if (data[0].version != 5) {
         throw CException("Expected version 5 in _1", f1, f2, f3);
@@ -93,16 +88,16 @@ void CImage::read3files(SInput console) {
     data[1].size = width * height;
     data[2].size = width * height;
     int mv = data[0].max_val;
-    if (data[1].version != mv || data[2].version != mv) {
+    if (data[1].max_val != mv || data[2].max_val != mv) {
         throw CException("Different max values", f1, f2, f3);
     }
     int len = data[0].size;
     unsigned char *buffer1 = new unsigned char[len];
     fread(buffer1, sizeof(unsigned char), len, f1);
     unsigned char *buffer2 = new unsigned char[len];
-    fread(buffer2, sizeof(unsigned char), len, f1);
+    fread(buffer2, sizeof(unsigned char), len, f2);
     unsigned char *buffer3 = new unsigned char[len];
-    fread(buffer3, sizeof(unsigned char), len, f1);
+    fread(buffer3, sizeof(unsigned char), len, f3);
     pixRGB = new RGB[len];
     for (int i = 0; i < len; i++) {
         pixRGB[i] = {(double) buffer1[i], (double) buffer2[i], (double) buffer3[i]};
@@ -135,38 +130,34 @@ void CImage::write1file(SInput console) {
 
 void CImage::write3files(SInput console) {
     FILE *f1, *f2, *f3;
-    string filename1 = console.inputFile;
+    string filename1 = console.outputFile;
     string filename2 = filename1;
     string filename3 = filename1;
     filename1.insert(filename1.size() - 4, "_1");
     filename2.insert(filename2.size() - 4, "_2");
     filename3.insert(filename3.size() - 4, "_3");
     int n = filename1.size();
-    char name1[n];
-    for (int i = 0; i < filename1.size(); i++) {
-        name1[i] = filename1[i];
-    }
-    char name2[n];
-    for (int i = 0; i < n; i++) {
-        name2[i] = filename2[i];
-    }
-    char name3[n];
-    for (int i = 0; i < n; i++) {
-        name3[i] = filename3[i];
-    }
-    f1 = fopen(name1, "rb");
+    char *name1 = new char[filename1.size() + 1];
+    char *name2 = new char[filename2.size() + 1];
+    char *name3 = new char[filename3.size() + 1];
+    strcpy(name1, filename1.c_str());
+    strcpy(name2, filename2.c_str());
+    strcpy(name3, filename3.c_str());
+    f1 = fopen(name1, "wb");
     if (!f1) {
         throw CException("Output file _1 didn't open");
     }
-    f2 = fopen(name2, "rb");
+    f2 = fopen(name2, "wb");
     if (!f2) {
         throw CException("Output file _2 didn't open");
     }
-    f3 = fopen(name3, "rb");
+    f3 = fopen(name3, "wb");
     if (!f3) {
         throw CException("Output file _3 didn't open");
     }
     fprintf(f1, "P%i\n%i %i\n%i\n", 5, data[0].width, data[0].height, data[0].max_val);
+    fprintf(f2, "P%i\n%i %i\n%i\n", 5, data[0].width, data[0].height, data[0].max_val);
+    fprintf(f3, "P%i\n%i %i\n%i\n", 5, data[0].width, data[0].height, data[0].max_val);
     unsigned char *buffer1 = new unsigned char[data[0].size];
     unsigned char *buffer2 = new unsigned char[data[0].size];
     unsigned char *buffer3 = new unsigned char[data[0].size];
