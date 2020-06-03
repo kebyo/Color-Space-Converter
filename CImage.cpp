@@ -205,6 +205,8 @@ void CImage::convert(SInput config) {
             break;
     }
     switch (config.to) {
+        case 0:
+            break;
         case 1:
             RGBtoHSL();
             break;
@@ -249,32 +251,27 @@ void CImage::RGBtoHSL() {
         double b = pixRGB[i].blue / 255.0;
         double Cmax = max(r, max(g, b));
         double Cmin = min(r, min(g, b));
-        double d = Cmax - Cmin;
         double l = (Cmax + Cmin) / 2.0;
-        double h = 0;
-        if (d == 0) {
+        double h = 0, s;
+        if (Cmax == Cmin) {
             h = 0;
         } else {
             if (Cmax == r && g >= b) {
-                h = 60.0 * (g - b) / d;
-            }
-            if (Cmax == r && g < b) {
-                h = 60.0 * (g - b) / d + 360;
-            }
-            if (Cmax == g) {
-                h = 60.0 * (b - r) / d + 120;
-            }
-            if (Cmax == b) {
-                h = 60.0 * (r - g) / d + 240;
+                h = 60.0 * (g - b) / (Cmax - Cmin);
+            } else if (Cmax == r && g < b) {
+                h = 60.0 * (g - b) / (Cmax - Cmin) + 360.0;
+            } else if (Cmax == g) {
+                h = 60.0 * (g - b) / (Cmax - Cmin) + 120.0;
+            } else if (Cmax == b) {
+                h = 60.0 * (g - b) / (Cmax - Cmin) + 240.0;
             }
         }
-        double s = 0;
         if (l == 0 || Cmax == Cmin) {
             s = 0;
-        } else if (l > 0 && l <= 0.5) {
-            s = d / (2 * l);
-        } else if (l < 1.0) {
-            s = d / (2.0 - 2.0 * l);
+        } else if (l <= 0.5) {
+            s = (Cmax - Cmin) / (2 * l);
+        } else if (l < 1) {
+            s = (Cmax - Cmin) / (2 - 2 * l);
         }
         pixRGB[i].red = h * 255.0 / 360.0;
         pixRGB[i].green = s * 255.0;
@@ -284,42 +281,48 @@ void CImage::RGBtoHSL() {
 
 void CImage::HSLtoRGB() {
     for (int i = 0; i < data->size; i++) {
-        double h = pixRGB[i].red / 255.0 * 360.0;
-        double s = pixRGB[i].blue / 255.0;
-        double l = pixRGB[i].green / 255.0;
-        double c = (1 - abs(2 * l - 1)) * s;
-        double x = c * (1 - abs(fmod(h / 60.0, 2) - 1));
-        double m = l - c / 2.0;
-        double r = 0, g = 0, b = 0;
-        if (h >= 0 && h < 60) {
-            r = c + m;
-            g = x + m;
-            b = 0 + m;
+        double h = pixRGB[i].red;
+        double s = pixRGB[i].blue;
+        double l = pixRGB[i].green;
+        double r, g, b;
+        double q = l <= 0.5 ? l * (1.0 + s) : l + s - l * s;
+        double p = 2 * l - q;
+        double hk = h / 360.0;
+        double Tr = hk + 1.0 / 3.0;
+        double Tg = hk;
+        double Tb = hk - 1.0 / 3.0;
+        Tr = Tr < 0 ? Tr + 1.0 : Tr;
+        Tg = Tg < 0 ? Tg + 1.0 : Tg;
+        Tb = Tb < 0 ? Tb + 1.0 : Tb;
+        Tr = Tr > 1.0 ? Tr - 1.0 : Tr;
+        Tg = Tg > 1.0 ? Tg - 1.0 : Tg;
+        Tb = Tb > 1.0 ? Tb - 1.0 : Tb;
+        if (Tr < 1.0 / 6.0) {
+            r = p + (q - p) * 6.0 * Tr;
+        } else if (Tr < 1.0 / 2.0) {
+            r = q;
+        } else if (Tr < 2.0 / 3.0) {
+            r = p + (q - p) * (2.0 / 3.0 - Tr) * 6.0;
+        } else {
+            r = p;
         }
-        if (h >= 60 && h < 120) {
-            r = x + m;
-            g = c + m;
-            b = 0 + m;
+        if (Tg < 1.0 / 6.0) {
+            g = p + (q - p) * 6.0 * Tg;
+        } else if (Tg < 1.0 / 2.0) {
+            g = q;
+        } else if (Tg < 2.0 / 3.0) {
+            g = p + (q - p) * (2.0 / 3.0 - Tg) * 6.0;
+        } else {
+            g = p;
         }
-        if (h >= 120 && h < 180) {
-            r = 0 + m;
-            g = c + m;
-            b = x + m;
-        }
-        if (h >= 180 && h < 240) {
-            r = 0 + m;
-            g = x + m;
-            b = c + m;
-        }
-        if (h >= 240 && h < 300) {
-            r = x + m;
-            g = 0 + m;
-            b = c + m;
-        }
-        if (h >= 300 && h < 360) {
-            r = c + m;
-            g = 0 + m;
-            b = x + m;
+        if (Tb < 1.0 / 6.0) {
+            b = p + (q - p) * 6.0 * Tb;
+        } else if (Tb < 1.0 / 2.0) {
+            b = q;
+        } else if (Tb < 2.0 / 3.0) {
+            b = p + (q - p) * (2.0 / 3.0 - Tb) * 6.0;
+        } else {
+            b = p;
         }
         pixRGB[i].red = r * 255.0;
         pixRGB[i].green = g * 255.0;
@@ -334,23 +337,17 @@ void CImage::RGBtoHSV() {
         double b = pixRGB[i].blue / 255.0;
         double MAX = max(r, max(g, b));
         double MIN = min(r, min(g, b));
-        double d = MAX - MIN;
-        double h = 0, s = 0, v = 0;
-        if (d == 0) {
+        double h, s, v;
+        if (MAX == MIN) {
             h = 0;
-        } else {
-            if (MAX == r && g >= b) {
-                h = 60.0 * (g - b) / d;
-            }
-            if (MAX == r && g < b) {
-                h = 60.0 * (g - b) / d + 360;
-            }
-            if (MAX == g) {
-                h = 60.0 * (b - r) / d + 120;
-            }
-            if (MAX == b) {
-                h = 60.0 * (r - g) / d + 240;
-            }
+        } else if (MAX == r && g >= b) {
+            h = 60.0 * (g - b) / (MAX - MIN);
+        } else if (MAX == r && g < b) {
+            h = 60.0 * (g - b) / (MAX - MIN) + 360.0;
+        } else if (MAX == g) {
+            h = 60.0 * (b - r) / (MAX - MIN) + 120.0;
+        } else if (MAX == b) {
+            h = 60.0 * (r - g) / (MAX - MIN) + 240.0;
         }
         if (MAX == 0) {
             s = 0;
@@ -368,40 +365,47 @@ void CImage::HSVtoRGB() {
     for (int i = 0; i < data->size; i++) {
         double h = pixRGB[i].red / 255.0 * 360.0;
         double s = pixRGB[i].blue / 255.0;
-        double v = pixRGB[i].green / 255.0;
-        double c = v * s;
-        double x = c * (1 - abs(fmod(h / 60.0, 2) - 1));
-        double m = v - c;
-        double r = 0, g = 0, b = 0;
-        if (h >= 0 && h < 60) {
-            r = c + m;
-            g = x + m;
-            b = 0 + m;
-        }
-        if (h >= 60 && h < 120) {
-            r = x + m;
-            g = c + m;
-            b = 0 + m;
-        }
-        if (h >= 120 && h < 180) {
-            r = 0 + m;
-            g = c + m;
-            b = x + m;
-        }
-        if (h >= 180 && h < 240) {
-            r = 0 + m;
-            g = x + m;
-            b = c + m;
-        }
-        if (h >= 240 && h < 300) {
-            r = x + m;
-            g = 0 + m;
-            b = c + m;
-        }
-        if (h >= 300 && h < 360) {
-            r = c + m;
-            g = 0 + m;
-            b = x + m;
+        double V = pixRGB[i].green / 255.0;
+        double r, g, b;
+        double Vmin = (1 - s) * V;
+        double Hi = abs(fmod(h / 60.0, 6));
+        pixRGB[i].red = r * 255.0;
+        pixRGB[i].green = g * 255.0;
+        pixRGB[i].blue = b * 255.0;
+        double a = (V - Vmin) * (fmod(h, 60)) / 60.0;
+        double Vinc = Vmin + a;
+        double Vdec = V - a;
+        switch ((int) Hi) {
+            case 0:
+                r = V;
+                g = Vinc;
+                b = Vmin;
+                break;
+            case 1:
+                r = Vdec;
+                g = V;
+                b = Vmin;
+                break;
+            case 2:
+                r = Vmin;
+                g = V;
+                b = Vinc;
+                break;
+            case 3:
+                r = Vmin;
+                g = Vdec;
+                b = V;
+                break;
+            case 4:
+                r = Vinc;
+                g = Vmin;
+                b = V;
+                break;
+            case 5:
+                r = V;
+                g = Vmin;
+                b = Vdec;
+                break;
         }
         pixRGB[i].red = r * 255.0;
         pixRGB[i].green = g * 255.0;
@@ -410,14 +414,14 @@ void CImage::HSVtoRGB() {
 }
 
 void CImage::RGBtoYCbCr601() {
-    double kr = 0.299, kg = 0.587, kb = 0.114;
+    double kr = 0.299, kb = 0.114;
     for (int i = 0; i < data->size; i++) {
         double r = pixRGB[i].red / 255.0;
         double g = pixRGB[i].green / 255.0;
         double b = pixRGB[i].blue / 255.0;
-        double y = kr * r + kg * g + kb * b;
-        double pb = 0.5 * (b - y) / (1.0 - kb);
-        double pr = 0.5 * (r - y) / (1.0 - kr);
+        double y = kr * r + (1 - kr - kb) * g + kb * b;
+        double pb = 0.5 * (b - y) / (1 - kb);
+        double pr = 0.5 * (r - y) / (1 - kr);
         pixRGB[i].red = y * 255.0;
         pixRGB[i].green = (pb + 0.5) * 255.0;
         pixRGB[i].blue = (pr + 0.5) * 255.0;
@@ -425,12 +429,12 @@ void CImage::RGBtoYCbCr601() {
 }
 
 void CImage::RGBtoYCbCr709() {
-    double kr = 0.0722, kg = 0.2126, kb = 0.7152;
+    double kr = 0.0722, kb = 0.7152;
     for (int i = 0; i < data->size; i++) {
         double r = pixRGB[i].red / 255.0;
         double g = pixRGB[i].green / 255.0;
         double b = pixRGB[i].blue / 255.0;
-        double y = kr * r + kg * g + kb * b;
+        double y = kr * r + (1 - kr - kb) * g + kb * b;
         double pb = 0.5 * (b - y) / (1.0 - kb);
         double pr = 0.5 * (r - y) / (1.0 - kr);
         pixRGB[i].red = y * 255.0;
@@ -440,14 +444,15 @@ void CImage::RGBtoYCbCr709() {
 }
 
 void CImage::YCbCr601toRGB() {
-    double kr = 0.299, kg = 0.587, kb = 0.114;
+    double kr = 0.299, kb = 0.114;
     for (int i = 0; i < data->size; i++) {
         double y = pixRGB[i].red / 255.0;
         double pb = pixRGB[i].green / 255.0 - 0.5;
         double pr = pixRGB[i].blue / 255.0 - 0.5;
-        double r = (y + pb * (2.0 - 2.0 * kr));
-        double g = (y - (kb / kg) * (2.0 - 2.0 * kb) * pb - (kr / kg) * (2.0 - 2.0 * kr) * pr);
-        double b = (y + (2.0 - 2.0 * kb) * pb);
+        double r, g, b;
+        b = 2 * pb * (1 - kb) + y;
+        r = 2 * pr * (1 - kr) + y;
+        g = (y - kr * r - kb * b) / (1 - kr - kb);
         r = r < 0 ? 0 : r;
         r = r > 1 ? 1 : r;
         b = b < 0 ? 0 : b;
@@ -466,9 +471,10 @@ void CImage::YCbCr709toRGB() {
         double y = pixRGB[i].red / 255.0;
         double pb = pixRGB[i].green / 255.0 - 0.5;
         double pr = pixRGB[i].blue / 255.0 - 0.5;
-        double r = (y + pb * (2.0 - 2.0 * kr));
-        double g = (y - (kb / kg) * (2.0 - 2.0 * kb) * pb - (kr / kg) * (2.0 - 2.0 * kr) * pr);
-        double b = (y + (2.0 - 2.0 * kb) * pb);
+        double r, g, b;
+        b = 2 * pb * (1 - kb) + y;
+        r = 2 * pr * (1 - kr) + y;
+        g = (y - kr * r - kb * b) / (1 - kr - kb);
         r = r < 0 ? 0 : r;
         r = r > 1 ? 1 : r;
         b = b < 0 ? 0 : b;
