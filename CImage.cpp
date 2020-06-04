@@ -426,8 +426,8 @@ void CImage::RGBtoYCbCr601() {
         double g = pixRGB[i].green / 255.0;
         double b = pixRGB[i].blue / 255.0;
         double y = kr * r + (1 - kr - kb) * g + kb * b;
-        double pb = 0.5 * (b - y) / (1 - kb);
-        double pr = 0.5 * (r - y) / (1 - kr);
+        double pb = 0.5 * (b - y) / (1.0 - kb);
+        double pr = 0.5 * (r - y) / (1.0 - kr);
         pixRGB[i].red = y * 255.0;
         pixRGB[i].green = (pb + 0.5) * 255.0;
         pixRGB[i].blue = (pr + 0.5) * 255.0;
@@ -466,8 +466,8 @@ void CImage::YCbCr601toRGB() {
         g = g < 0 ? 0 : g;
         g = g > 1 ? 1 : g;
         pixRGB[i].red = r * 255.0;
-        pixRGB[i].green = r * 255.0;
-        pixRGB[i].blue = r * 255.0;
+        pixRGB[i].green = g * 255.0;
+        pixRGB[i].blue = b * 255.0;
     }
 }
 
@@ -488,8 +488,8 @@ void CImage::YCbCr709toRGB() {
         g = g < 0 ? 0 : g;
         g = g > 1 ? 1 : g;
         pixRGB[i].red = r * 255.0;
-        pixRGB[i].green = r * 255.0;
-        pixRGB[i].blue = r * 255.0;
+        pixRGB[i].green = g * 255.0;
+        pixRGB[i].blue = b * 255.0;
     }
 }
 
