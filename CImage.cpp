@@ -1,5 +1,6 @@
 #include "CImage.h"
 #include <string.h>
+#include <algorithm>
 
 void CImage::read1file(SInput console) {
     FILE *f = fopen(console.inputFile, "rb");
@@ -8,7 +9,7 @@ void CImage::read1file(SInput console) {
     }
     data = new SMetaData[1];
     data[0].file = f;
-    if (fscanf(f, "P%i%i%i%i\n", &this->data[0].version, &this->data[0].width, &this->data[0].height,
+    if (fscanf(f, "P%d%d%d%d\n", &this->data[0].version, &this->data[0].width, &this->data[0].height,
                &data[0].max_val) != 4) {
         throw CException("Wrong amount data in file", f);
     }
@@ -55,15 +56,15 @@ void CImage::read3files(SInput console) {
         throw CException("File _3 didn't open");
     }
     data = new SMetaData[3];
-    if (fscanf(f1, "P%i%i%i%i\n", &this->data[0].version, &this->data[0].width, &this->data[0].height,
+    if (fscanf(f1, "P%d%d%d%d\n", &this->data[0].version, &this->data[0].width, &this->data[0].height,
                &data[0].max_val) != 4) {
         throw CException("Wrong amount of meta data in _1");
     }
-    if (fscanf(f2, "P%i%i%i%i\n", &this->data[1].version, &this->data[1].width, &this->data[1].height,
+    if (fscanf(f2, "P%d%d%d%d\n", &this->data[1].version, &this->data[1].width, &this->data[1].height,
                &data[1].max_val) != 4) {
         throw CException("Wrong amount of meta data in _2");
     }
-    if (fscanf(f3, "P%i%i%i%i\n", &this->data[2].version, &this->data[2].width, &this->data[2].height,
+    if (fscanf(f3, "P%d%d%d%d\n", &this->data[2].version, &this->data[2].width, &this->data[2].height,
                &data[2].max_val) != 4) {
         throw CException("Wrong amount of meta data in _3");
     }
@@ -115,7 +116,7 @@ void CImage::write1file(SInput console) {
     if (!new_f) {
         throw CException("Output file didn't open", new_f);
     }
-    fprintf(new_f, "P%i\n%i %i\n%i\n", 6, data[0].width, data[0].height, data[0].max_val);
+    fprintf(new_f, "P%d\n%d %d\n%d\n", 6, data[0].width, data[0].height, data[0].max_val);
     int len = data[0].size * 3;
     unsigned char *buffer = new unsigned char[len];
     for (int i = 0, j = 0; i < len; i += 3, j++) {
@@ -155,9 +156,9 @@ void CImage::write3files(SInput console) {
     if (!f3) {
         throw CException("Output file _3 didn't open");
     }
-    fprintf(f1, "P%i\n%i %i\n%i\n", 5, data[0].width, data[0].height, data[0].max_val);
-    fprintf(f2, "P%i\n%i %i\n%i\n", 5, data[0].width, data[0].height, data[0].max_val);
-    fprintf(f3, "P%i\n%i %i\n%i\n", 5, data[0].width, data[0].height, data[0].max_val);
+    fprintf(f1, "P%i\n%d %d\n%d\n", 5, data[0].width, data[0].height, data[0].max_val);
+    fprintf(f2, "P%i\n%d %d\n%d\n", 5, data[0].width, data[0].height, data[0].max_val);
+    fprintf(f3, "P%i\n%d %d\n%d\n", 5, data[0].width, data[0].height, data[0].max_val);
     unsigned char *buffer1 = new unsigned char[data[0].size];
     unsigned char *buffer2 = new unsigned char[data[0].size];
     unsigned char *buffer3 = new unsigned char[data[0].size];
@@ -252,7 +253,7 @@ void CImage::RGBtoHSL() {
         double Cmax = max(r, max(g, b));
         double Cmin = min(r, min(g, b));
         double l = (Cmax + Cmin) / 2.0;
-        double h = 0, s;
+        double h = 0, s = 0;
         if (Cmax == Cmin) {
             h = 0;
         } else {
@@ -261,31 +262,31 @@ void CImage::RGBtoHSL() {
             } else if (Cmax == r && g < b) {
                 h = 60.0 * (g - b) / (Cmax - Cmin) + 360.0;
             } else if (Cmax == g) {
-                h = 60.0 * (g - b) / (Cmax - Cmin) + 120.0;
+                h = 60.0 * (b - r) / (Cmax - Cmin) + 120.0;
             } else if (Cmax == b) {
-                h = 60.0 * (g - b) / (Cmax - Cmin) + 240.0;
+                h = 60.0 * (r - g) / (Cmax - Cmin) + 240.0;
             }
         }
         if (l == 0 || Cmax == Cmin) {
             s = 0;
         } else if (l <= 0.5) {
-            s = (Cmax - Cmin) / (2 * l);
-        } else if (l < 1) {
-            s = (Cmax - Cmin) / (2 - 2 * l);
+            s = (Cmax - Cmin) / (2.0 * l);
+        } else {
+            s = (Cmax - Cmin) / (2.0 - 2.0 * l);
         }
         pixRGB[i].red = h * 255.0 / 360.0;
         pixRGB[i].green = s * 255.0;
-        pixRGB[i].blue = l * 255, 0;
+        pixRGB[i].blue = l * 255.0;
     }
 }
 
 void CImage::HSLtoRGB() {
     for (int i = 0; i < data->size; i++) {
-        double h = pixRGB[i].red;
-        double s = pixRGB[i].blue;
-        double l = pixRGB[i].green;
+        double h = pixRGB[i].red / 255.0 * 360.0;
+        double s = pixRGB[i].green / 250.0;
+        double l = pixRGB[i].blue / 255.0;
         double r, g, b;
-        double q = l <= 0.5 ? l * (1.0 + s) : l + s - l * s;
+        double q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
         double p = 2 * l - q;
         double hk = h / 360.0;
         double Tr = hk + 1.0 / 3.0;
@@ -323,6 +324,11 @@ void CImage::HSLtoRGB() {
             b = p + (q - p) * (2.0 / 3.0 - Tb) * 6.0;
         } else {
             b = p;
+        }
+        if (s == 0) {
+            r = l;
+            g = l;
+            b = l;
         }
         pixRGB[i].red = r * 255.0;
         pixRGB[i].green = g * 255.0;
@@ -364,8 +370,8 @@ void CImage::RGBtoHSV() {
 void CImage::HSVtoRGB() {
     for (int i = 0; i < data->size; i++) {
         double h = pixRGB[i].red / 255.0 * 360.0;
-        double s = pixRGB[i].blue / 255.0;
-        double V = pixRGB[i].green / 255.0;
+        double s = pixRGB[i].green / 255.0;
+        double V = pixRGB[i].blue / 255.0;
         double r, g, b;
         double Vmin = (1 - s) * V;
         double Hi = abs(fmod(h / 60.0, 6));
