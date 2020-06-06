@@ -80,6 +80,8 @@ private:
 
     void CMYtoRGB();
 
+    double T(double t, double q, double p);
+
 };
 
 

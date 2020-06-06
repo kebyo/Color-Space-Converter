@@ -282,58 +282,34 @@ void CImage::RGBtoHSL() {
 
 void CImage::HSLtoRGB() {
     for (int i = 0; i < data->size; i++) {
-        double h = pixRGB[i].red / 255.0 * 360.0;
+        double h = pixRGB[i].red / 255.0;
         double s = pixRGB[i].green / 250.0;
         double l = pixRGB[i].blue / 255.0;
         double r, g, b;
         double q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
-        double p = 2 * l - q;
-        double hk = h / 360.0;
-        double Tr = hk + 1.0 / 3.0;
-        double Tg = hk;
-        double Tb = hk - 1.0 / 3.0;
-        Tr = Tr < 0 ? Tr + 1.0 : Tr;
-        Tg = Tg < 0 ? Tg + 1.0 : Tg;
-        Tb = Tb < 0 ? Tb + 1.0 : Tb;
-        Tr = Tr > 1.0 ? Tr - 1.0 : Tr;
-        Tg = Tg > 1.0 ? Tg - 1.0 : Tg;
-        Tb = Tb > 1.0 ? Tb - 1.0 : Tb;
-        if (Tr < 1.0 / 6.0) {
-            r = p + (q - p) * 6.0 * Tr;
-        } else if (Tr < 1.0 / 2.0) {
-            r = q;
-        } else if (Tr < 2.0 / 3.0) {
-            r = p + (q - p) * (2.0 / 3.0 - Tr) * 6.0;
-        } else {
-            r = p;
-        }
-        if (Tg < 1.0 / 6.0) {
-            g = p + (q - p) * 6.0 * Tg;
-        } else if (Tg < 1.0 / 2.0) {
-            g = q;
-        } else if (Tg < 2.0 / 3.0) {
-            g = p + (q - p) * (2.0 / 3.0 - Tg) * 6.0;
-        } else {
-            g = p;
-        }
-        if (Tb < 1.0 / 6.0) {
-            b = p + (q - p) * 6.0 * Tb;
-        } else if (Tb < 1.0 / 2.0) {
-            b = q;
-        } else if (Tb < 2.0 / 3.0) {
-            b = p + (q - p) * (2.0 / 3.0 - Tb) * 6.0;
-        } else {
-            b = p;
-        }
-        if (s == 0) {
-            r = l;
-            g = l;
-            b = l;
-        }
+        double p = 2.0 * l - q;
+        double Tr = h + 1.0 / 3.0;
+        double Tg = h;
+        double Tb = h - 1.0 / 3.0;
+        r = T(Tr, q, p);
+        g = T(Tg, q, p);
+        b = T(Tb, q, p);
         pixRGB[i].red = r * 255.0;
         pixRGB[i].green = g * 255.0;
         pixRGB[i].blue = b * 255.0;
     }
+}
+
+double CImage::T(double t, double q, double p) {
+    t = (t < 0.0) ? t + 1.0 : (t > 1.0) ? t - 1.0 : t;
+    if (t < 1.0 / 6.0)
+        return p + (q - p) * 6.0 * t;
+    if (t < 1.0 / 2.0)
+        return q;
+    if (t < 2.0 / 3.0)
+        return p + ((q - p) * (2.0 / 3.0 - t) * 6.0);
+    return p;
+
 }
 
 void CImage::RGBtoHSV() {
