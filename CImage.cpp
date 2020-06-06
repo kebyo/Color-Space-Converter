@@ -250,53 +250,71 @@ void CImage::RGBtoHSL() {
         double r = pixRGB[i].red / 255.0;
         double g = pixRGB[i].green / 255.0;
         double b = pixRGB[i].blue / 255.0;
-        double Cmax = max(r, max(g, b));
-        double Cmin = min(r, min(g, b));
-        double l = (Cmax + Cmin) / 2.0;
-        double h = 0, s = 0;
-        if (l == 0 || Cmax == Cmin) {
-            s = 0;
-        } else if (l <= 0.5) {
-            s = (Cmax - Cmin) / (2.0 * l);
-        } else {
-            s = (Cmax - Cmin) / (2.0 - 2.0 * l);
+        double Max = max(r, max(g, b));
+        double Min = min(r, min(g, b));
+        double V = Max;
+        double C = Max - Min;
+        double L = V - C / 2.0;
+        double H;
+        if (C == 0)
+            H = 0;
+        else {
+            if (V == r)
+                H = (60.0) * ((g - b) / C);
+            else if (V == g)
+                H = (60.0) * (2 + (b - r) / C);
+            else if (V == b)
+                H = (60.0) * (4 + (r - g) / C);
+            else
+                H = 0;
         }
-        if (Cmax == Cmin) {
-            h = 0;
-        } else {
-            if (Cmax == r && g >= b) {
-                h = 60.0 * (g - b) / (Cmax - Cmin);
-            } else if (Cmax == r && g < b) {
-                h = 60.0 * (g - b) / (Cmax - Cmin) + 360.0;
-            } else if (Cmax == g) {
-                h = 60.0 * (b - r) / (Cmax - Cmin) + 120.0;
-            } else if (Cmax == b) {
-                h = 60.0 * (r - g) / (Cmax - Cmin) + 240.0;
-            }
-        }
-        pixRGB[i].red = h * 255.0 / 360.0;
-        pixRGB[i].green = s * 255.0;
-        pixRGB[i].blue = l * 255.0;
+        double S = ((L == 0) || (L == 1)) ? 0 : ((V - L) / min(L, 1 - L));
+        pixRGB[i].blue = L * 255.0;
+        pixRGB[i].green = S * 255.0;
+        pixRGB[i].red = (H / 360.0) * 255.0;
     }
 }
 
 void CImage::HSLtoRGB() {
     for (int i = 0; i < data->size; i++) {
-        double h = pixRGB[i].red / 255.0;
-        double s = pixRGB[i].green / 250.0;
+        double h = (pixRGB[i].red / 255.0) * 360.0;
+        double s = pixRGB[i].green / 255.0;
         double l = pixRGB[i].blue / 255.0;
-        double r, g, b;
-        double q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
-        double p = 2.0 * l - q;
-        double Tr = h + 1.0 / 3.0;
-        double Tg = h;
-        double Tb = h - 1.0 / 3.0;
-        r = T(Tr, q, p);
-        g = T(Tg, q, p);
-        b = T(Tb, q, p);
-        pixRGB[i].red = r * 255.0;
-        pixRGB[i].green = g * 255.0;
-        pixRGB[i].blue = b * 255.0;
+        double h1 = h / 60.0;
+        double c = (1 - abs(2 * l - 1)) * s;
+        double x = c * (1 - abs(fmod(h1, 2) - 1));
+        double m = l - c / 2.0;
+        m *= 255.0;
+        if ((h1 >= 0) && (h1 <= 1)) {
+            pixRGB[i].red = c * 255.0 + m;
+            pixRGB[i].green = x * 255.0 + m;
+            pixRGB[i].blue = 0 + m;
+        }
+        if ((h1 > 1) && (h1 <= 2)) {
+            pixRGB[i].red = x * 255.0 + m;
+            pixRGB[i].green = c * 255.0 + m;
+            pixRGB[i].blue = 0 + m;
+        }
+        if ((h1 > 2) && (h1 <= 3)) {
+            pixRGB[i].red = 0 + m;
+            pixRGB[i].green = c * 255.0 + m;
+            pixRGB[i].blue = x * 255.0 + m;
+        }
+        if ((h1 > 3) && (h1 <= 4)) {
+            pixRGB[i].red = 0 + m;
+            pixRGB[i].green = x * 255.0 + m;
+            pixRGB[i].blue = c * 255.0 + m;
+        }
+        if ((h1 > 4) && (h1 <= 5)) {
+            pixRGB[i].red = x * 255.0 + m;
+            pixRGB[i].green = 0 + m;
+            pixRGB[i].blue = c * 255.0 + m;
+        }
+        if ((h1 > 5) && (h1 <= 6)) {
+            pixRGB[i].red = c * 255.0 + m;
+            pixRGB[i].green = 0 + m;
+            pixRGB[i].blue = x * 255.0 + m;
+        }
     }
 }
 
