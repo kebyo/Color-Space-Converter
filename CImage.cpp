@@ -254,6 +254,13 @@ void CImage::RGBtoHSL() {
         double Cmin = min(r, min(g, b));
         double l = (Cmax + Cmin) / 2.0;
         double h = 0, s = 0;
+        if (l == 0 || Cmax == Cmin) {
+            s = 0;
+        } else if (l <= 0.5) {
+            s = (Cmax - Cmin) / (2.0 * l);
+        } else {
+            s = (Cmax - Cmin) / (2.0 - 2.0 * l);
+        }
         if (Cmax == Cmin) {
             h = 0;
         } else {
@@ -266,13 +273,6 @@ void CImage::RGBtoHSL() {
             } else if (Cmax == b) {
                 h = 60.0 * (r - g) / (Cmax - Cmin) + 240.0;
             }
-        }
-        if (l == 0 || Cmax == Cmin) {
-            s = 0;
-        } else if (l <= 0.5) {
-            s = (Cmax - Cmin) / (2.0 * l);
-        } else {
-            s = (Cmax - Cmin) / (2.0 - 2.0 * l);
         }
         pixRGB[i].red = h * 255.0 / 360.0;
         pixRGB[i].green = s * 255.0;
